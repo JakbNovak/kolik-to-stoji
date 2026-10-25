@@ -182,7 +182,20 @@ details .board{margin-top:12px}
   .track .span,.mk{transition:none}
 }
 </style>
-
+<meta name="description" content="Pět věcí denně. Hádej, kolik to stojí, a porazíš kamaráda.">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="cs_CZ">
+<meta property="og:site_name" content="Kolik to stojí?">
+<meta property="og:title" content="Kolik to stojí?">
+<meta property="og:description" content="Pět věcí denně. Porazíš mě?">
+<meta property="og:url" content="https://jakbnovak.github.io/kolik-to-stoji/">
+<meta property="og:image" content="https://jakbnovak.github.io/kolik-to-stoji/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Kolik to stojí?">
+<meta name="twitter:description" content="Pět věcí denně. Porazíš mě?">
+<meta name="twitter:image" content="https://jakbnovak.github.io/kolik-to-stoji/og.png">
 <style>html{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -232,7 +245,14 @@ details .board{margin-top:12px}
     {n:'Nájem',u:'byt 2+kk v Praze, měsíčně, průměr nabídek',p:22170,e:'🏠',q:'Za zdi, ve kterých bydlíš jen občas.',s:'UlovDomov přes ČTK, 2. čtvrtletí 2025'},
     {n:'Škoda Fabia',u:'nejlevnější nová, akční verze Easy',p:399900,e:'🚗',q:'Dřív za tohle byla chalupa. Teď je to Fabia.',s:'autohled.cz, ceník k 21. 10. 2026'},
     {n:'1 m² nového bytu',u:'Praha, průměr nabídek developerů',p:182311,e:'📐',q:'Jeden metr čtvereční, a to ještě nemá okna na zahradu.',s:'Forbes.cz, 1. čtvrtletí 2026'},
-    {n:'Nový byt v Praze',u:'průměrná nabídková cena, všechny velikosti',p:11700000,e:'🏢',q:'Dva pokoje a kuchyňský kout za cenu menšího zámku.',s:'Forbes.cz, 1. čtvrtletí 2026'}
+    {n:'Nový byt v Praze',u:'průměrná nabídková cena, všechny velikosti',p:11700000,e:'🏢',q:'Dva pokoje a kuchyňský kout za cenu menšího zámku.',s:'Forbes.cz, 1. čtvrtletí 2026'},
+    {n:'Půllitr v Praze',u:'točená dvanáctka v hospodě, průměr, duben 2024',p:70,e:'🍺',q:'Dneska to bude spíš víc. Ale aspoň máš pěnu.',s:'Dotykačka přes Novinky.cz, duben 2024 (novější průměr jsem nenašel)'},
+    {n:'Jízdenka na 24 hodin',u:'Praha, plné jízdné, v aplikaci PID Lítačka',p:140,e:'🎟️',q:'Jeden den neomezeně. Skoro se vyplatí bydlet v tramvaji.',s:'PID, tarif od 1. 1. 2026 (Seznam Zprávy)'},
+    {n:'Jízdenka na 72 hodin',u:'Praha, plné jízdné, v aplikaci PID Lítačka',p:340,e:'🧳',q:'Turista to platí s úsměvem. Ty to hádáš.',s:'PID, tarif od 1. 1. 2026 (Seznam Zprávy)'},
+    {n:'Jízda načerno',u:'pokuta v pražské MHD, zaplacená na místě',p:1200,e:'🕵️',q:'Nejdražší jízda, jakou si můžeš dopřát.',s:'PID, tarif od 1. 1. 2026 (Seznam Zprávy)'},
+    {n:'Průměrná mzda',u:'hrubá, měsíčně, celá ČR, 2. čtvrtletí 2026',p:51966,e:'💰',q:'Průměr je, když si dva dají obojí a třetí nic.',s:'ČSÚ, zveřejněno 3. 9. 2026'},
+    {n:'Průměrný důchod',u:'starobní, měsíčně, od ledna 2026',p:21839,e:'👵',q:'Za celoživotní práci. Číslo se vejde na jednu cedulku.',s:'MPSV, 12. 9. 2025'},
+    {n:'iPhone 17',u:'startovní cena, 256 GB',p:22990,e:'📱',q:'Telefon, který stojí víc než babiččin důchod.',s:'svetandroida.cz, duben 2026'}
   ];
   var MAXP=20000000, LN=Math.log(MAXP);
   /* Veřejná adresa hry, která se vkládá do všech výzev. Po přesunu na vlastní doménu stačí změnit tady. */
@@ -261,7 +281,7 @@ details .board{margin-top:12px}
   /* Žebříček: duely odehrané v tomhle prohlížeči. Server hra nemá, takže se neřadí napříč zařízeními. */
   var duels=[];
   try{
-    var rawD=JSON.parse(localStorage.getItem('kts-duels2')||'[]');
+    var rawD=JSON.parse(localStorage.getItem('kts-duels3')||'[]');
     if(Array.isArray(rawD))duels=rawD.filter(function(d){return d&&typeof d.n==='string'&&typeof d.me==='number'&&typeof d.op==='number';});
   }catch(e){}
   function recordDuel(){
@@ -272,7 +292,7 @@ details .board{margin-top:12px}
     if(!dup){
       duels.push({n:n,me:me,op:op,s:S.seed});
       duels=duels.slice(-60);
-      try{localStorage.setItem('kts-duels2',JSON.stringify(duels));}catch(e){}
+      try{localStorage.setItem('kts-duels3',JSON.stringify(duels));}catch(e){}
     }
     refreshBoard();
   }
@@ -355,7 +375,7 @@ details .board{margin-top:12px}
   var S, cur=4500, timer=null;
   function loadDaily(){
     var key=dayKey(), saved=[];
-    try{var j=JSON.parse(localStorage.getItem('kts2')||'null'); if(j&&j.key===key&&Array.isArray(j.g))saved=j.g.filter(function(x){return typeof x==='number'&&x>0;}).slice(0,5);}catch(e){}
+    try{var j=JSON.parse(localStorage.getItem('kts3')||'null'); if(j&&j.key===key&&Array.isArray(j.g))saved=j.g.filter(function(x){return typeof x==='number'&&x>0;}).slice(0,5);}catch(e){}
     var seed=parseInt(key.replace(/-/g,''),10);
     S={mode:'daily',key:key,no:dayNo(),seed:seed,items:pick(rng(seed)),g:saved,phase:saved.length>=5?'done':'guess'};
   }
@@ -368,7 +388,7 @@ details .board{margin-top:12px}
   }
   function save(){
     if(S.mode!=='daily')return;
-    try{localStorage.setItem('kts2',JSON.stringify({key:S.key,g:S.g}));}catch(e){}
+    try{localStorage.setItem('kts3',JSON.stringify({key:S.key,g:S.g}));}catch(e){}
   }
 
   function renderTop(){
