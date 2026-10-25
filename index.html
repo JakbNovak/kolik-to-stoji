@@ -392,7 +392,7 @@ details .board{margin-top:12px}
     for(var i=0;i<5;i++){
       var c='';
       if(i<S.g.length&&!(S.phase==='guess'&&i===S.g.length)){c='s-'+cls(score(S.g[i],S.items[i].p).pts);}
-      else if(S.phase!=='done'&&S.phase!=='intro'&&i===S.g.length){c='now';}
+      else if(S.phase!=='done'&&S.phase!=='intro'&&S.phase!=='home'&&i===S.g.length){c='now';}
       out+='<i class="'+c+'"></i>';
     }
     progEl.innerHTML=out;
@@ -468,6 +468,20 @@ details .board{margin-top:12px}
     var t=total(), line=S.items.map(function(it,i){return sq(score(S.g[i],it.p).pts);}).join('');
     var tok=makeToken(S.seed,S.g,name);
     return 'Zahraješ si moje Kolik to stojí? Mám '+t+'/500 '+line+'. Porazíš mě?\n'+GAME_URL+'#'+tok+'\nKdyby odkaz nešel, vlož do hry tenhle kód: '+tok;
+  }
+  function homeView(){
+    var n=S.g.length, h, sub, btn;
+    if(n>=5){
+      var t=total();
+      h='Dnes máš '+t+' z 500';sub=verdict(t);btn='Zobrazit účtenku';
+    }else if(n>0){
+      h='Rozehráno, '+n+' z 5';sub='Dnešní pětice čeká na dohrání.';btn='Pokračovat';
+    }else{
+      h='Dnešní pětice čeká';sub='Pět věcí, tipni cenu každé. Pro všechny stejné.';btn='Zahrát dnešní pětici';
+    }
+    return '<section class="intro"><p class="step">Hra č. '+S.no+'</p><h1>'+h+'</h1><p class="unit">'+sub+'</p></section>'+
+      '<div class="btns"><button class="btn primary block" data-a="resume">'+btn+'</button>'+
+      '<button class="btn block" data-a="practice">Hrát nanečisto</button></div>'+boardHTML(5);
   }
   function introView(){
     var n=esc(S.opp.name||'Kamarád');
@@ -559,7 +573,9 @@ details .board{margin-top:12px}
   function render(){
     clearInterval(timer);
     renderTop();
-    if(S.phase==='intro'){
+    if(S.phase==='home'){
+      app.innerHTML=homeView();
+    }else if(S.phase==='intro'){
       app.innerHTML=introView();
     }else if(S.phase==='guess'){
       cur=4500;
@@ -583,6 +599,7 @@ details .board{margin-top:12px}
     }
     else if(a==='copy')doCopy(shareText(),'Zkopírováno.');
     else if(a==='accept'){S.phase='guess';render();}
+    else if(a==='resume'){S.phase=S.g.length>=5?'done':'guess';render();}
     else if(a==='challenge'){
       var inp=document.getElementById('nm'), nm=inp?inp.value.trim().slice(0,14):'';
       try{localStorage.setItem('kts-name',nm);}catch(e){}
@@ -606,7 +623,7 @@ details .board{margin-top:12px}
   document.getElementById('home').addEventListener('click',function(e){
     e.preventDefault();
     try{history.replaceState(null,'',location.pathname+location.search);}catch(x){}
-    loadDaily();render();
+    loadDaily();S.phase='home';render();
     try{window.scrollTo({top:0});}catch(x){}
   });
   refreshBoard();
