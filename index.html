@@ -235,8 +235,8 @@ details .board{margin-top:12px}
     {n:'Nový byt v Praze',u:'průměrná nabídková cena, všechny velikosti',p:11700000,e:'🏢',q:'Dva pokoje a kuchyňský kout za cenu menšího zámku.',s:'Forbes.cz, 1. čtvrtletí 2026'}
   ];
   var MAXP=20000000, LN=Math.log(MAXP);
-  /* Odkaz na hru, který se vkládá do výzev. Po přesunu na vlastní doménu stačí změnit tady. */
-  var GAME_URL=(function(){try{if(/^https?:$/.test(location.protocol))return location.origin+location.pathname;}catch(e){}return 'https://claude.ai/artifact/SPj31W2GtQEzqFAAAPaiMJ';})();
+  /* Veřejná adresa hry, která se vkládá do všech výzev. Po přesunu na vlastní doménu stačí změnit tady. */
+  var GAME_URL='https://jakbnovak.github.io/kolik-to-stoji/';
   function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
   function encName(n){var o='';for(var i=0;i<n.length&&i<14;i++){o+=n.charCodeAt(i).toString(36).padStart(4,'0');}return o;}
   function decName(s){var o='';for(var i=0;i+4<=s.length&&o.length<14;i+=4){var c=parseInt(s.substr(i,4),36);if(c>=32&&c<65536)o+=String.fromCharCode(c);}return o.replace(/[\u0000-\u001f<>]/g,'').trim();}
