@@ -294,7 +294,7 @@ details .board{margin-top:12px}
   function plBody(n){return n===1?'bod':(n>=2&&n<=4)?'body':'bodů';}
 
   /* Sdílený denní žebříček (Supabase). Dokud jsou url a key prázdné, hra se chová jako dřív a žebříček se nezobrazí. */
-  var LB={url:'',key:''};
+  var LB={url:'https://rdbtomvvyrjkuvbfcqec.supabase.co',key:'sb_publishable_lMvJH5agzxv4izlq1bYPaA_1IziBHr0'};
   function lbOn(){return !!(LB.url&&LB.key);}
   function lbHead(x){var h={apikey:LB.key,Authorization:'Bearer '+LB.key};for(var k in x)h[k]=x[k];return h;}
   function lbCid(){var c='';try{c=localStorage.getItem('kts-cid')||'';if(!c){c=Math.random().toString(36).slice(2,12)+Date.now().toString(36);localStorage.setItem('kts-cid',c);}}catch(e){}return c||('x'+Math.random().toString(36).slice(2,14));}
