@@ -415,39 +415,25 @@ details .board{margin-top:12px}
   function cls(pts){return pts>=90?'g':pts>=70?'y':pts>=40?'o':'r';}
   function sq(pts){return pts>=90?'🟩':pts>=70?'🟨':pts>=40?'🟧':'🟥';}
   function ratioTxt(r){return '×'+(r<10?r.toFixed(1).replace('.',','):String(Math.round(r)));}
-  /* Reakce po každé věci. Víc variant na pásmo, vybere se podle dne a pořadí věci, takže při překreslení zůstane stejná. */
-  var REACTS=[
-    [1.05,['Přesně na korunu. Nepracuješ u pokladny?','Na korunu. Doufám, že to nebyla náhoda.','Trefa. Obchodníci o tobě už vědí.']],
-    [1.25,['Skoro přesně.','Za pár korun vedle. Pokladní by to přežila.','Málem. Zbytek dorovná paní u kasy.']],
-    [1.6,['Slušný odhad.','Dobrý nos na ceny.','Takhle se dá nakupovat bez slz.']],
-    [2.5,['Vedle, ale ještě v rozumných mezích.','Cena je jinde, ale aspoň ve stejném kraji.','Tohle by ti pokladní odpustila, jen se zeptala, jestli máš kartu.']],
-    [5,['Pěkně vedle.','Tohle nebyl odhad, tohle byla naděje.','Kdyby to byla střelba, trefil by sis souseda.']],
-    [10,['Tohle bylo daleko.','Až na Měsíc, a to ještě ne po rovné čáře.','Peněženka se omlouvá, že to neviděla přijít.']],
-    [Infinity,['Jiná planeta.','Tip z jiné galaxie. Pozdravuj vesmír.','Tohle už není odhad, to je poezie.']]
-  ];
-  function react(r,n){
-    for(var i=0;i<REACTS.length;i++){
-      if(r<=REACTS[i][0]){var v=REACTS[i][1];return v[(n||0)%v.length];}
-    }
-    return '';
+  function react(r){
+    if(r<=1.05)return 'Přesně na korunu. Nepracuješ u pokladny?';
+    if(r<=1.25)return 'Skoro přesně.';
+    if(r<=1.6)return 'Slušný odhad.';
+    if(r<=2.5)return 'Vedle, ale ještě v rozumných mezích.';
+    if(r<=5)return 'Pěkně vedle.';
+    if(r<=10)return 'Tohle bylo daleko.';
+    return 'Jiná planeta.';
   }
-  /* Hlášky podle skóre. Každé pásmo má několik variant, vybere se podle dne, takže se neopakují pořád ty samé. */
-  var VERDICTS=[
-    [500,['Pět z pěti. Buď jsi pokladní, nebo podvádíš. Nebo obojí.','Dokonalé. Doporučuji ti nekandidovat na ministra financí, ať máme klid.','Perfektní účtenka. Dej jí rámeček.','Tohle neumí ani paní z trafiky. A ta ví všechno.']],
-    [470,['Skoro dokonalé. Kde sis nechal ukázat ceny, u Lidlu na zdi?','Pokladní by tě hned zaměstnala. A pak by se tě bála.','Tobě by se dalo svěřit rodinné nákupy. A možná i hypotéka.','Jsi živá cenovka. Jen bez baterek.']],
-    [430,['Víš to jako pokladní. Možná líp.','Cenovky se tě bojí. Právem.','Drahé věci tě nepřekvapí, levné tě nepodvedou.','V obchodě tě znají jménem. A trochu se tě obávají.']],
-    [380,['Nakupuješ sám a bez nákupního seznamu od mámy.','Letáky čteš od začátku do konce, že jo?','Na slevu se ptáš dřív, než se řekne dobrý den.','Tebe v obchodě nikdo neokrade. Maximálně lehce.']],
-    [300,['Slušný zákazník, jen tě občas oškubou.','Střed. Žádná hanba, ale ani sláva.','Průměr. V obchodě tě pozná jen kamera.','Zákazník, kterého mají rádi. Hlavně na pokladně.']],
-    [200,['Na cenovky se moc nedíváš, že?','Platíš kartou a nekoukáš. Vím, jak to chodí.','Peníze rozhazuješ s grácií, jen nevíš kam.','Při placení zavíráš oči a doufáš.']],
-    [100,['Žiješ na jiné planetě, ale příjemné.','Kde je ten svět, ve kterém bydlí byt za pětikilo?','Ceny pro tebe jsou spíš doporučení.','Žiješ v éře, kdy rohlík stál korunu. Chybí ti to?']],
-    [50,['Platí za tebe babička.','Tvoje peněženka tě nezná. A ty ji taky ne.','Nákupní seznam píše babička a ty jen nosíš tašky.','Obchodníci doufají, že ses zrovna narodil.']],
-    [0,['Tipoval jsi vůbec? Nebo jsi jen mačkal tlačítko?','Inflace se tě netýká, protože o ní nevíš. Závidím.','Dnešek byl těžký. Zítra to bude lepší, slibuju.','Pokladní se ti smála. Ale jen uvnitř.']]
-  ];
   function verdict(t){
-    for(var i=0;i<VERDICTS.length;i++){
-      if(t>=VERDICTS[i][0]){var v=VERDICTS[i][1];return v[(S&&S.seed?S.seed:0)%v.length];}
-    }
-    return VERDICTS[VERDICTS.length-1][1][0];
+    if(t>=500)return 'Dokonalé. Buď jsi pokladní, nebo podvádíš.';
+    if(t>=470)return 'Skoro dokonalé. Pokladní by tě hned zaměstnala.';
+    if(t>=430)return 'Víš to jako pokladní. Cenovky se tě bojí.';
+    if(t>=380)return 'Nakupuješ sám a bez seznamu od mámy. Statečné.';
+    if(t>=300)return 'Slušný zákazník, jen tě občas oškubou.';
+    if(t>=200)return 'Na cenovky se nedíváš. Karta mlčí, ty taky.';
+    if(t>=100)return 'Žiješ na jiné planetě. Aspoň tam bude levně.';
+    if(t>=50)return 'Platí za tebe babička.';
+    return 'Tipoval jsi vůbec, nebo jsi jen mačkal tlačítko?';
   }
 
   var S, cur=4500, timer=null;
@@ -525,7 +511,7 @@ details .board{margin-top:12px}
       '<div class="mk guess'+edge(pg)+'" style="--p:'+pg+'"><span>ty</span></div>'+
       '<div class="mk real'+edge(pr)+'" id="mkr" style="--p:'+pg+'"><span>cena</span></div></div>'+
       '<section class="verdict"><p class="pts">+'+sc.pts+'<small>ze 100 bodů</small></p>'+
-      '<p class="react">'+react(sc.r,S.seed+i)+'</p><p class="dir">'+dir+'</p><p class="quip">'+it.q+'</p><p class="src">Zdroj: '+it.s+'</p></section>'+
+      '<p class="react">'+react(sc.r)+'</p><p class="dir">'+dir+'</p><p class="quip">'+it.q+'</p><p class="src">Zdroj: '+it.s+'</p></section>'+
       '<div class="btns"><button class="btn primary block" id="next" data-a="next">'+(i<4?'Další zboží':'Zobrazit účtenku')+'</button></div>';
   }
   function animateReveal(){
