@@ -185,6 +185,7 @@ details.code summary{cursor:pointer;font-weight:700}
 .bl li.me{background:var(--tag);color:var(--tag-ink);font-weight:700}
 .bnm{overflow-wrap:anywhere}
 .bwl,.bpt{text-align:right}
+.bl.d li{grid-template-columns:1.8rem minmax(0,1fr) 4.6rem}
 .bnote{margin:8px 0 0;font-size:.78rem;color:var(--muted)}
 details .board{margin-top:12px}
 
@@ -291,6 +292,52 @@ details .board{margin-top:12px}
     return {seed:seed,g:g,name:p[7]?decName(p[7]):''};
   }
   function plBody(n){return n===1?'bod':(n>=2&&n<=4)?'body':'bodů';}
+
+  /* Sdílený denní žebříček (Supabase). Dokud jsou url a key prázdné, hra se chová jako dřív a žebříček se nezobrazí. */
+  var LB={url:'',key:''};
+  function lbOn(){return !!(LB.url&&LB.key);}
+  function lbHead(x){var h={apikey:LB.key,Authorization:'Bearer '+LB.key};for(var k in x)h[k]=x[k];return h;}
+  function lbCid(){var c='';try{c=localStorage.getItem('kts-cid')||'';if(!c){c=Math.random().toString(36).slice(2,12)+Date.now().toString(36);localStorage.setItem('kts-cid',c);}}catch(e){}return c||('x'+Math.random().toString(36).slice(2,14));}
+  function lbPosted(){try{return localStorage.getItem('kts-posted')===S.key;}catch(e){return false;}}
+  function lbMine(){try{return localStorage.getItem('kts-posted-name')||'';}catch(e){return '';}}
+  function lbLoad(){
+    var el=document.getElementById('lb');if(!el||!lbOn())return;
+    var key=S.key;
+    fetch(LB.url+'/rest/v1/scores?day=eq.'+encodeURIComponent(key)+'&select=name,pts,cid&order=pts.desc,created_at.asc&limit=20',{headers:lbHead()})
+      .then(function(r){if(!r.ok)throw 0;return r.json();})
+      .then(function(rows){
+        var box=document.getElementById('lb');if(!box||S.key!==key)return;
+        if(!rows.length){box.innerHTML='<p class="bnote">Zatím tu nikdo není. Buď první.</p>';return;}
+        var me=lbCid();
+        box.innerHTML='<ol class="bl d"><li class="bh"><span></span><span>jméno</span><span class="bpt">body</span></li>'+rows.map(function(r,i){
+          return '<li'+(r.cid===me?' class="me"':'')+'><span>'+(i+1)+'.</span><span class="bnm">'+esc(String(r.name))+'</span><span class="bpt">'+(+r.pts||0)+' / 500</span></li>';
+        }).join('')+'</ol><p class="bnote">Dnešní pětice, všichni hráči. Nový žebříček každý den.</p>';
+      })
+      .catch(function(){var box=document.getElementById('lb');if(box)box.innerHTML='<p class="bnote">Žebříček se teď nepodařilo načíst.</p>';});
+  }
+  function lbPost(name){
+    var msg=document.getElementById('lbmsg'),key=S.key;
+    if(msg)msg.textContent='Zapisuju…';
+    fetch(LB.url+'/rest/v1/scores',{method:'POST',headers:lbHead({'Content-Type':'application/json',Prefer:'return=minimal'}),
+      body:JSON.stringify({day:key,name:name,pts:total(),cid:lbCid()})})
+      .then(function(r){
+        if(!r.ok&&r.status!==409)throw 0;
+        try{localStorage.setItem('kts-posted',key);localStorage.setItem('kts-posted-name',name);}catch(e){}
+        var f=document.getElementById('lbform');if(f)f.hidden=true;
+        lbLoad();
+      })
+      .catch(function(){var m=document.getElementById('lbmsg');if(m)m.textContent='Nepovedlo se zapsat. Zkus to za chvíli.';});
+  }
+  function lbSection(){
+    if(S.mode!=='daily'||!lbOn())return '';
+    var nm='';try{nm=localStorage.getItem('kts-name')||'';}catch(e){}
+    return '<section class="board" id="lbwrap"><p class="bt">Dnešní žebříček</p>'+
+      '<div class="chal" id="lbform"'+(lbPosted()?' hidden':'')+' style="margin:10px 0 14px"><label for="lbn">Tvoje jméno do žebříčku</label>'+
+      '<input id="lbn" maxlength="14" autocomplete="off" placeholder="třeba Kuba" value="'+esc(nm)+'">'+
+      '<button class="btn primary block" data-a="post">Zapsat výsledek</button>'+
+      '<p class="hint2" id="lbmsg">Zapíšeš se jednou za den, výsledek už nejde změnit.</p></div>'+
+      '<div id="lb"><p class="bnote">Načítám…</p></div></section>';
+  }
 
   /* Žebříček: duely odehrané v tomhle prohlížeči. Server hra nemá, takže se neřadí napříč zařízeními. */
   var duels=[];
@@ -556,7 +603,7 @@ details .board{margin-top:12px}
       '<ul class="rows">'+rows+'</ul><hr class="rl">'+
       '<div class="rt"><span>CELKEM</span><b>'+t+' / 500</b></div>'+
       '<p class="sq" aria-hidden="true">'+squares+'</p>'+
-      '<p class="rv">'+verdict(t)+'</p></section>'+
+      '<p class="rv">'+verdict(t)+'</p></section>'+lbSection()+
       '<div class="btns" style="margin-top:28px">'+first+secondary+'</div>'+
       '<p class="flash" id="flash" aria-live="polite"></p><div id="fallback"></div>'+
       (S.mode==='daily'?'<p class="cd">Nová pětice za <b id="cd">--:--:--</b></p>':'');
@@ -602,7 +649,7 @@ details .board{margin-top:12px}
     }else if(S.phase==='reveal'){
       app.innerHTML=revealView();animateReveal();
     }else{
-      app.innerHTML=doneView();startCountdown();
+      app.innerHTML=doneView();startCountdown();lbLoad();
     }
     if(S.phase!=='guess'){try{window.scrollTo({top:0,behavior:'instant'});}catch(e){}}
   }
@@ -623,6 +670,12 @@ details .board{margin-top:12px}
       var inp=document.getElementById('nm'), nm=inp?inp.value.trim().slice(0,14):'';
       try{localStorage.setItem('kts-name',nm);}catch(e){}
       doCopy(challengeText(nm),'Výzva zkopírována. Pošli ji kamarádovi.');
+    }
+    else if(a==='post'){
+      var li=document.getElementById('lbn'), ln=li?li.value.trim().slice(0,14):'';
+      if(!ln){var lm=document.getElementById('lbmsg');if(lm)lm.textContent='Napiš jméno, ať víme, kdo to je.';return;}
+      try{localStorage.setItem('kts-name',ln);}catch(e){}
+      lbPost(ln);
     }
     else if(a==='practice'){loadPractice();render();}
     else if(a==='daily'){loadDaily();render();}
