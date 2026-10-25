@@ -424,13 +424,23 @@ details .board{margin-top:12px}
     if(r<=10)return 'Tohle bylo daleko.';
     return 'Jiná planeta.';
   }
+  /* Hlášky podle skóre. Každé pásmo má dvě, vybere se podle dne, takže se neopakují pořád ty samé. */
+  var VERDICTS=[
+    [500,['Pět z pěti. Buď jsi pokladní, nebo podvádíš. Nebo obojí.','Dokonalé. Doporučuji ti nekandidovat na ministra financí, ať máme klid.']],
+    [470,['Skoro dokonalé. Kde sis nechal ukázat ceny, u Lidlu na zdi?','Pokladní by tě hned zaměstnala. A pak by se tě bála.']],
+    [430,['Víš to jako pokladní. Možná líp.','Cenovky se tě bojí. Právem.']],
+    [380,['Nakupuješ sám a bez nákupního seznamu od mámy.','Letáky čteš od začátku do konce, že jo?']],
+    [300,['Slušný zákazník, jen tě občas oškubou.','Střed. Žádná hanba, ale ani sláva.']],
+    [200,['Na cenovky se moc nedíváš, že?','Platíš kartou a nekoukáš. Vím, jak to chodí.']],
+    [100,['Žiješ na jiné planetě, ale příjemné.','Kde je ten svět, ve kterém bydlí byt za pětikilo?']],
+    [50,['Platí za tebe babička.','Tvoje peněženka tě nezná. A ty ji taky ne.']],
+    [0,['Tipoval jsi vůbec? Nebo jsi jen mačkal tlačítko?','Inflace se tě netýká, protože o ní nevíš. Závidím.']]
+  ];
   function verdict(t){
-    if(t>=450)return 'Víš to jako pokladní. Možná líp.';
-    if(t>=380)return 'Nakupuješ sám a bez nákupního seznamu od mámy.';
-    if(t>=300)return 'Slušný zákazník, jen tě občas oškubou.';
-    if(t>=200)return 'Na cenovky se moc nedíváš, že?';
-    if(t>=100)return 'Žiješ na jiné planetě, ale příjemné.';
-    return 'Platí za tebe babička.';
+    for(var i=0;i<VERDICTS.length;i++){
+      if(t>=VERDICTS[i][0]){var v=VERDICTS[i][1];return v[(S&&S.seed?S.seed:0)%v.length];}
+    }
+    return VERDICTS[VERDICTS.length-1][1][0];
   }
 
   var S, cur=4500, timer=null;
