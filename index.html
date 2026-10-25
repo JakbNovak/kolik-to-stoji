@@ -1,0 +1,610 @@
+﻿<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kolik to stojí</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@700;800;900&family=Hanken+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: jeden úzký sloupec jako cenovka v regálu. Žlutá cenovka s červenou cenou je jediný hlasitý prvek, zbytek je tichý. */
+:root{
+  --bg:#EEF0F2; --panel:#FFFFFF; --ink:#14161A; --muted:#58606A; --line:#CBD0D7;
+  --tag:#FFD400; --tag-ink:#14161A; --tag-red:#C8102E;
+  --ok:#2E9E4F; --mid:#E6B800; --warn:#E8791A; --bad:#D8333A;
+  --f-d:'Big Shoulders Display','Arial Narrow',Impact,sans-serif;
+  --f-b:'Hanken Grotesk',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-m:'IBM Plex Mono',ui-monospace,'SFMono-Regular',Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){--bg:#0E1012;--panel:#171A1E;--ink:#F1F2EE;--muted:#98A0AA;--line:#2C3138;color-scheme:dark}
+}
+:root[data-theme="dark"]{--bg:#0E1012;--panel:#171A1E;--ink:#F1F2EE;--muted:#98A0AA;--line:#2C3138;color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-b);font-size:16px;line-height:1.45;-webkit-text-size-adjust:100%}
+.wrap{max-width:30rem;margin:0 auto;padding-block:20px 36px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+
+/* hlavička */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.mark{position:relative;display:inline-flex;flex-direction:column;background:var(--tag);color:var(--tag-ink);font-family:var(--f-d);font-weight:900;font-size:1.55rem;line-height:.92;letter-spacing:.02em;padding:9px 14px 8px 30px;transform:rotate(-1.5deg);clip-path:polygon(0 0,100% 0,100% calc(100% - 9px),calc(100% - 9px) 100%,0 100%)}
+.mark::before{content:"";position:absolute;left:10px;top:50%;width:10px;height:10px;margin-top:-5px;border-radius:50%;background:var(--bg)}
+.meta{font-family:var(--f-m);font-size:.75rem;color:var(--muted);text-align:right;line-height:1.3}
+.meta b{display:block;color:var(--ink);font-weight:500}
+
+.prog{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:18px 0 22px}
+.prog i{height:8px;background:var(--line)}
+.prog i.now{background:var(--ink)}
+.prog i.s-g{background:var(--ok)}.prog i.s-y{background:var(--mid)}.prog i.s-o{background:var(--warn)}.prog i.s-r{background:var(--bad)}
+
+/* zboží */
+.item{display:flex;align-items:center;gap:16px}
+.pic{flex:none;display:grid;place-items:center;width:84px;height:84px;font-size:2.8rem;line-height:1;background:var(--panel);border:2px solid var(--ink)}
+.step{margin:0;font-family:var(--f-m);font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+h1{margin:2px 0 0;font-family:var(--f-d);font-weight:800;font-size:clamp(2.1rem,9vw,2.8rem);line-height:.98;text-wrap:balance}
+.unit{margin:6px 0 0;color:var(--muted);font-size:.95rem}
+.hint{margin:18px 0 0;font-size:.9rem;color:var(--muted)}
+
+/* cenovka */
+.tag{position:relative;margin-top:18px;background:var(--tag);color:var(--tag-ink);padding:10px 16px 12px;clip-path:polygon(0 0,100% 0,100% calc(100% - 12px),calc(100% - 12px) 100%,0 100%)}
+.tag .lab{display:block;font-family:var(--f-m);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase}
+.tag .num{display:flex;align-items:baseline;gap:8px;color:var(--tag-red);font-family:var(--f-d);font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.tag output,.tag .big{font-size:clamp(3rem,15vw,4.6rem);letter-spacing:-.005em;overflow-wrap:anywhere}
+.tag .kc{font-size:1.6rem}
+
+/* posuvník */
+.sl{margin-top:14px}
+input[type=range]{-webkit-appearance:none;appearance:none;display:block;width:100%;height:34px;margin:0;background:transparent;cursor:pointer;touch-action:pan-y}
+input[type=range]::-webkit-slider-runnable-track{height:8px;background:var(--line)}
+input[type=range]::-moz-range-track{height:8px;background:var(--line)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;box-sizing:border-box;width:34px;height:34px;margin-top:-13px;border-radius:50%;background:var(--tag);border:3px solid var(--ink)}
+input[type=range]::-moz-range-thumb{box-sizing:border-box;width:34px;height:34px;border-radius:50%;background:var(--tag);border:3px solid var(--ink)}
+.scalebox{padding:0 17px}
+.scale{position:relative;height:30px}
+.scale i{position:absolute;left:calc(var(--p) * 100%);top:2px;width:1px;height:8px;background:var(--muted)}
+.scale i.minor{height:5px;background:var(--line)}
+.scale b{position:absolute;top:12px;left:0;transform:translateX(-50%);font:500 .7rem var(--f-m);color:var(--muted);white-space:nowrap}
+.scale i:first-child b{transform:none}
+
+.row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px;margin-top:10px}
+.exact{display:flex;flex-direction:column;gap:6px;font-size:.85rem;color:var(--muted)}
+.inwrap{display:inline-flex;align-items:center;gap:8px;color:var(--ink)}
+.inwrap input{width:9.5rem;height:46px;padding:0 12px;background:var(--panel);border:2px solid var(--ink);border-radius:0;font:500 1.15rem var(--f-m);font-variant-numeric:tabular-nums}
+.inwrap em{font-style:normal;font-weight:700}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:50px;padding:0 22px;border:2px solid var(--ink);background:transparent;font-weight:700;cursor:pointer}
+.btn.primary{background:var(--tag);color:var(--tag-ink)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn.block{width:100%}
+.btns{display:flex;flex-direction:column;gap:10px;margin-top:20px}
+
+/* odhalení */
+.mini{display:flex;align-items:center;gap:12px}
+.mini .pic{width:56px;height:56px;font-size:1.9rem}
+.mini h1{font-size:1.9rem}
+.duo{display:grid;grid-template-columns:1fr 1.25fr;gap:12px;margin-top:18px;align-items:stretch}
+.cell{padding:10px 4px 0}
+.cell .lab{display:block;font-family:var(--f-m);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.cell strong{display:block;margin-top:4px;font-family:var(--f-d);font-weight:800;font-size:2.4rem;line-height:1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.duo .tag{margin-top:0;animation:pop .35s cubic-bezier(.2,1.4,.4,1) both}
+.duo .tag .big{font-size:clamp(2.4rem,11vw,3.4rem)}
+.duo .tag .kc{font-size:1.2rem}
+@keyframes pop{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+
+.track{position:relative;height:104px;margin-top:10px}
+.track .line{position:absolute;left:17px;right:17px;top:50%;height:4px;margin-top:-2px;background:var(--line)}
+.track .span{position:absolute;top:50%;height:4px;margin-top:-2px;background:var(--ink);left:calc(17px + (100% - 34px) * var(--lo));width:calc((100% - 34px) * var(--w));transition:left .8s cubic-bezier(.3,.8,.3,1),width .8s cubic-bezier(.3,.8,.3,1)}
+.mk{position:absolute;top:50%;left:calc(17px + (100% - 34px) * var(--p));width:0;height:0;transition:left .8s cubic-bezier(.3,.8,.3,1)}
+.mk::before{content:"";position:absolute;left:-9px;top:-9px;width:18px;height:18px;border-radius:50%;border:3px solid var(--ink);background:var(--panel)}
+.mk.real::before{background:var(--tag-red);border-color:var(--tag-red)}
+.mk span{position:absolute;white-space:nowrap;font:500 .72rem var(--f-m);transform:translateX(-50%)}
+.mk.l span{transform:none;left:-9px}
+.mk.r span{transform:translateX(-100%);left:9px}
+.mk.guess span{bottom:16px}
+.mk.real span{top:16px;color:var(--tag-red)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .mk.real span{color:#FF6B73}}
+:root[data-theme="dark"] .mk.real span{color:#FF6B73}
+
+.verdict{margin-top:6px;padding:14px 0 0;border-top:2px dashed var(--line)}
+.pts{margin:0;font-family:var(--f-d);font-weight:900;font-size:3.4rem;line-height:1}
+.pts small{font-size:1.3rem;font-weight:700;margin-left:6px;color:var(--muted)}
+.react{margin:6px 0 0;font-weight:700;font-size:1.15rem}
+.dir{margin:2px 0 0;color:var(--muted)}
+.quip{margin:12px 0 0;padding-left:12px;border-left:4px solid var(--tag);font-size:.98rem}
+
+/* účtenka */
+.receipt{position:relative;margin-top:4px;padding:20px 18px 22px;background:var(--panel);font-family:var(--f-m);font-size:.85rem;border:1px solid var(--line);border-bottom:0}
+.receipt::after{content:"";position:absolute;left:-1px;right:-1px;top:100%;height:12px;background:linear-gradient(135deg,var(--panel) 50%,transparent 50%) 0 0/12px 12px repeat-x,linear-gradient(225deg,var(--panel) 50%,transparent 50%) 0 0/12px 12px repeat-x}
+.rh{margin:0;text-align:center;font-family:var(--f-d);font-weight:900;font-size:1.7rem;letter-spacing:.04em}
+.rd{margin:2px 0 0;text-align:center;color:var(--muted);font-size:.75rem}
+.rl{margin:14px 0;border:0;border-top:2px dashed var(--line)}
+.rows{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.rrow{display:grid;grid-template-columns:1fr auto;gap:2px 12px;min-width:0}
+.rn{font-weight:500;overflow-wrap:anywhere}
+.rp{font-weight:500;font-variant-numeric:tabular-nums}
+.rs{grid-column:1/-1;color:var(--muted);font-size:.75rem;overflow-wrap:anywhere}
+.rt{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.rt span{font-size:.8rem;letter-spacing:.08em}
+.rt b{font-family:var(--f-d);font-weight:900;font-size:2.8rem;line-height:1;font-variant-numeric:tabular-nums}
+.rv{margin:12px 0 0;text-align:center;font-weight:500}
+.sq{margin:10px 0 0;text-align:center;font-size:1.4rem;letter-spacing:.08em}
+.cd{margin:16px 0 0;text-align:center;font-family:var(--f-m);font-size:.85rem;color:var(--muted)}
+.cd b{color:var(--ink);font-weight:500}
+.flash{margin:8px 0 0;min-height:1.2em;text-align:center;font-size:.9rem;color:var(--muted)}
+textarea.copybox{width:100%;margin-top:10px;padding:10px;background:var(--panel);border:2px solid var(--ink);font:.85rem var(--f-m);resize:none}
+
+/* duel */
+.chal{display:flex;flex-direction:column;gap:8px;padding:16px;background:var(--panel);border:2px solid var(--ink)}
+.chal label{font-size:.85rem;color:var(--muted)}
+.chal input{height:46px;padding:0 12px;background:var(--bg);color:var(--ink);border:2px solid var(--ink);border-radius:0;font:1rem var(--f-b)}
+.hint2{margin:0;font-size:.85rem;color:var(--muted)}
+.intro h1{font-size:clamp(2.2rem,10vw,3rem);overflow-wrap:anywhere}
+.crow{display:grid;grid-template-columns:1fr 1fr;gap:6px 10px;min-width:0}
+.crow .rn{grid-column:1/-1}
+.rn em{display:block;font-style:normal;color:var(--muted);font-size:.75rem}
+.cc{display:flex;flex-direction:column;min-width:0;padding:8px 10px;border:1px solid var(--line);font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.cc small{color:var(--muted);font-size:.7rem;letter-spacing:.06em;text-transform:uppercase}
+.cc b{font-weight:500}
+.cc.win{background:var(--tag);color:var(--tag-ink);border-color:var(--tag)}
+.cc.win small{color:var(--tag-ink)}
+.vsline{margin:0;text-align:center;font-family:var(--f-d);font-weight:900;font-size:1.9rem;line-height:1.1}
+.vsline small{display:block;margin-top:4px;font:400 .85rem var(--f-b);color:var(--muted)}
+details.code{margin-top:28px;padding-top:14px;border-top:2px dashed var(--line)}
+details.code summary{cursor:pointer;font-weight:700}
+.join{display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px;margin-top:12px}
+.join label{flex:1 1 100%;font-size:.85rem;color:var(--muted)}
+.join input{flex:1 1 12rem;min-width:0;height:46px;padding:0 12px;background:var(--panel);color:var(--ink);border:2px solid var(--ink);border-radius:0;font:.95rem var(--f-m)}
+
+/* žebříček */
+.board{margin-top:26px}
+.bt{margin:0 0 6px;font-family:var(--f-d);font-weight:800;font-size:1.5rem;line-height:1}
+.bl{list-style:none;margin:0;padding:0;border-top:2px solid var(--ink)}
+.bl li{display:grid;grid-template-columns:1.8rem minmax(0,1fr) 3.4rem 4.6rem;gap:8px;align-items:baseline;padding:9px 6px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.bl li.bh{padding-block:6px;font:.68rem var(--f-m);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.bl li.me{background:var(--tag);color:var(--tag-ink);font-weight:700}
+.bnm{overflow-wrap:anywhere}
+.bwl,.bpt{text-align:right}
+.bnote{margin:8px 0 0;font-size:.78rem;color:var(--muted)}
+details .board{margin-top:12px}
+
+.foot{margin:34px 0 0;font-size:.8rem;color:var(--muted)}
+.foot p{margin:0 0 6px}
+
+@media (prefers-reduced-motion: reduce){
+  .duo .tag{animation:none}
+  .track .span,.mk{transition:none}
+}
+</style>
+
+<style>html{color-scheme:light}body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="top">
+      <div class="mark"><span>KOLIK TO</span><span>STOJÍ?</span></div>
+      <div class="meta" id="meta"></div>
+    </div>
+    <div class="prog" id="prog" aria-hidden="true"></div>
+  </header>
+  <main id="app"></main>
+  <details class="code" id="joinbox">
+    <summary>Mám kód výzvy od kamaráda</summary>
+    <div class="join">
+      <label for="joinin">Vlož kód nebo celý odkaz z jeho zprávy</label>
+      <input id="joinin" autocomplete="off" spellcheck="false">
+      <button class="btn" id="joinbtn" type="button">Přijmout</button>
+    </div>
+    <p class="flash" id="joinmsg" aria-live="polite"></p>
+  </details>
+  <details class="code" id="boardbox" hidden>
+    <summary>Žebříček duelů</summary>
+    <div id="boardbody"></div>
+  </details>
+  <footer class="foot">
+    <p>Pět věcí denně, stejných pro všechny. Posuvníkem nebo číslem tipni cenu.</p>
+    <p>Body se počítají podle toho, kolikrát ses spletl, ne o kolik korun. Rohlík za 40 Kč je stejná chyba jako byt za 70 milionů. Ceny jsou orientační, běžné pro Česko v roce 2026.</p>
+  </footer>
+</div>
+
+<script>
+(function(){
+  var ITEMS=[
+    {n:'Rohlík',u:'1 kus, běžný, z obchodu',p:4,e:'🥖',q:'Malá věc, velká nostalgie za dobou, kdy stál korunu.'},
+    {n:'Máslo',u:'250 g, běžné z obchodu',p:80,e:'🧈',q:'Máslo je nový luxus. Mažte tence.'},
+    {n:'Mléko',u:'1 litr, polotučné',p:28,e:'🥛',q:'Kráva to má přes noc, obchod přes den.'},
+    {n:'Vejce',u:'10 kusů, velikost M',p:75,e:'🥚',q:'Deset kousků a jedno se stejně rozbije cestou domů.'},
+    {n:'Chleba',u:'1 kg, konzumní',p:45,e:'🍞',q:'Kupuješ celý, sníš půlku. Statistika to ví.'},
+    {n:'Banány',u:'1 kg',p:40,e:'🍌',q:'Jediné ovoce, které má vlastní obal a žádnou vůli.'},
+    {n:'Brambory',u:'1 kg, konzumní',p:25,e:'🥔',q:'Český základ. Před víkendem nikdy nechybí.'},
+    {n:'Čokoláda',u:'tabulka, 100 g, mléčná',p:45,e:'🍫',q:'V akci laciná, mimo akci se jí chce plakat.'},
+    {n:'Žvýkačky',u:'1 balení, běžné',p:30,e:'🫧',q:'Cena čerstvého dechu před důležitou schůzkou.'},
+    {n:'Zubní pasta',u:'1 tuba, běžná',p:55,e:'🪥',q:'Mátová svěžest v ceně reklamy.'},
+    {n:'Toaletní papír',u:'8 rolí, třívrstvý',p:90,e:'🧻',q:'Za covidu byl zlato, dnes už jen cena.'},
+    {n:'Ponožky',u:'1 pár, běžné',p:90,e:'🧦',q:'Do pračky jdou dvě, ven se vrátí jedna.'},
+    {n:'Pivo',u:'0,5 l, výčep v hospodě v Praze',p:70,e:'🍺',q:'Platí se za pivo i za to, že tě nikdo nehoní.'},
+    {n:'Káva',u:'flat white v kavárně',p:90,e:'☕',q:'Ráno to nikdo nepočítá. Večer na účtu ano.'},
+    {n:'Jízdenka MHD',u:'Praha, základní na 90 minut',p:40,e:'🚇',q:'Revizor zná cenu přesně. Ty teď taky.'},
+    {n:'Benzín',u:'1 litr, Natural 95',p:37,e:'⛽',q:'Nádrž je malá, peněženka ještě menší.'},
+    {n:'Svíčková',u:'s knedlíkem, v restauraci',p:270,e:'🍽️',q:'Čtvrtý knedlík navíc se nepočítá.'},
+    {n:'Pizza',u:'margherita, v restauraci',p:200,e:'🍕',q:'Rajče, sýr, těsto. Zbytek je ambice.'},
+    {n:'Denní menu',u:'polévka a hlavní jídlo v hospodě',p:180,e:'🍲',q:'Za polévku vděčný, za knedlík ještě víc.'},
+    {n:'Kino',u:'vstupenka, dospělý, večer, Praha',p:260,e:'🎬',q:'Popcorn se v ceně neukrývá, ten stojí zvlášť.'},
+    {n:'Zoo Praha',u:'vstupné, dospělý',p:300,e:'🦒',q:'Žirafa zdarma, vstup ne.'},
+    {n:'Pánský střih',u:'kadeřnictví v Praze',p:500,e:'✂️',q:'Vlasy rostou zdarma. Střih ne.'},
+    {n:'Taxi z letiště',u:'Letiště Václava Havla do centra Prahy',p:700,e:'🚕',q:'Taxametr se točí rychleji než ty.'},
+    {n:'Dálniční známka',u:'roční, osobní auto',p:2300,e:'🛣️',q:'Nálepka, díky které můžeš stát v zácpě legálně.'},
+    {n:'Dentální hygiena',u:'1 návštěva, Praha',p:1500,e:'🦷',q:'Čistí se zuby i peněženka.'},
+    {n:'Pračka',u:'základní, nová',p:11000,e:'🧺',q:'Přežije všechno, jen ne tvou druhou ponožku.'},
+    {n:'PlayStation 5',u:'konzole, nová, základní',p:13000,e:'🎮',q:'A pak ještě hry. Vždycky ještě hry.'},
+    {n:'Městské kolo',u:'nové, běžné',p:12000,e:'🚲',q:'Zámek by ti měl stát aspoň desetinu kola.'},
+    {n:'Minimální mzda',u:'hrubá, měsíčně, 2026',p:22400,e:'💼',q:'Z tohohle se platí všechno ostatní, co tu hádáš.'},
+    {n:'Nájem',u:'byt 2+kk v Praze, měsíčně',p:28000,e:'🏠',q:'Za zdi, ve kterých bydlíš jen občas.'},
+    {n:'Škoda Fabia',u:'nová, základní výbava',p:480000,e:'🚗',q:'Dřív za tohle byla chalupa. Teď je to Fabia.'},
+    {n:'Byt na koupi',u:'2+kk v Praze',p:7000000,e:'🏢',q:'Dva pokoje a kuchyňský kout za cenu menšího zámku.'}
+  ];
+  var MAXP=20000000, LN=Math.log(MAXP);
+  /* Odkaz na hru, který se vkládá do výzev. Po přesunu na vlastní doménu stačí změnit tady. */
+  var GAME_URL=(function(){try{if(/^https?:$/.test(location.protocol))return location.origin+location.pathname;}catch(e){}return 'https://claude.ai/artifact/SPj31W2GtQEzqFAAAPaiMJ';})();
+  function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+  function encName(n){var o='';for(var i=0;i<n.length&&i<14;i++){o+=n.charCodeAt(i).toString(36).padStart(4,'0');}return o;}
+  function decName(s){var o='';for(var i=0;i+4<=s.length&&o.length<14;i+=4){var c=parseInt(s.substr(i,4),36);if(c>=32&&c<65536)o+=String.fromCharCode(c);}return o.replace(/[\u0000-\u001f<>]/g,'').trim();}
+  function makeToken(seed,g,name){
+    var p=['d',seed.toString(36)].concat(g.map(function(x){return Math.round(x).toString(36);}));
+    if(name)p.push(encName(name));
+    return p.join('.');
+  }
+  function parseToken(t){
+    t=String(t||'');var h=t.indexOf('#');if(h>=0)t=t.slice(h+1);
+    var m=t.match(/(?:^|[^0-9a-z.])d((?:\.[0-9a-z]+){6,7})/i);
+    if(!m)return null;
+    var p=('d'+m[1]).toLowerCase().split('.');
+    var seed=parseInt(p[1],36);
+    if(!isFinite(seed)||seed<1)return null;
+    var g=[];
+    for(var i=0;i<5;i++){var v=parseInt(p[2+i],36);if(!isFinite(v)||v<1||v>999999999)return null;g.push(v);}
+    return {seed:seed,g:g,name:p[7]?decName(p[7]):''};
+  }
+  function plBody(n){return n===1?'bod':(n>=2&&n<=4)?'body':'bodů';}
+
+  /* Žebříček: duely odehrané v tomhle prohlížeči. Server hra nemá, takže se neřadí napříč zařízeními. */
+  var duels=[];
+  try{
+    var rawD=JSON.parse(localStorage.getItem('kts-duels')||'[]');
+    if(Array.isArray(rawD))duels=rawD.filter(function(d){return d&&typeof d.n==='string'&&typeof d.me==='number'&&typeof d.op==='number';});
+  }catch(e){}
+  function recordDuel(){
+    var me=0,op=0;
+    S.items.forEach(function(it,i){me+=score(S.g[i],it.p).pts;op+=score(S.opp.g[i],it.p).pts;});
+    var n=S.opp.name||'Soupeř';
+    var dup=duels.some(function(d){return d.s===S.seed&&d.n===n&&d.me===me&&d.op===op;});
+    if(!dup){
+      duels.push({n:n,me:me,op:op,s:S.seed});
+      duels=duels.slice(-60);
+      try{localStorage.setItem('kts-duels',JSON.stringify(duels));}catch(e){}
+    }
+    refreshBoard();
+  }
+  function boardRows(){
+    var map={}, you={n:'Ty',w:0,l:0,p:0,me:true};
+    duels.forEach(function(d){
+      var k=d.n.toLowerCase(), f=map[k]||(map[k]={n:d.n,w:0,l:0,p:0});
+      f.p+=d.op;you.p+=d.me;
+      if(d.me>d.op){you.w++;f.l++;}else if(d.op>d.me){f.w++;you.l++;}
+    });
+    var rows=Object.keys(map).map(function(k){return map[k];});
+    rows.push(you);
+    rows.sort(function(a,b){return b.w-a.w||b.p-a.p;});
+    return rows;
+  }
+  function boardHTML(limit,noTitle){
+    if(!duels.length)return '';
+    var li=boardRows().slice(0,limit||10).map(function(r,i){
+      return '<li'+(r.me?' class="me"':'')+'><span>'+(i+1)+'.</span><span class="bnm">'+esc(r.n)+'</span><span class="bwl">'+r.w+'–'+r.l+'</span><span class="bpt">'+r.p+' b.</span></li>';
+    }).join('');
+    return '<section class="board">'+(noTitle?'':'<p class="bt">Žebříček</p>')+
+      '<ol class="bl"><li class="bh"><span></span><span>jméno</span><span class="bwl">V–P</span><span class="bpt">body</span></li>'+li+'</ol>'+
+      '<p class="bnote">Výhry–prohry a součet bodů ze všech duelů hraných v tomhle prohlížeči.</p></section>';
+  }
+  function refreshBoard(){
+    var box=document.getElementById('boardbox'), body=document.getElementById('boardbody');
+    if(!box||!body)return;
+    box.hidden=!duels.length;
+    body.innerHTML=boardHTML(10,true);
+  }
+  var app=document.getElementById('app'), progEl=document.getElementById('prog'), metaEl=document.getElementById('meta');
+  var nf=new Intl.NumberFormat('cs-CZ');
+  function fmt(n){return nf.format(n);}
+  function clamp(v,a,b){return Math.min(b,Math.max(a,v));}
+  function pos(v){return clamp(Math.log(Math.max(1,v))/LN,0,1);}
+  function niceRound(p){
+    if(p<100)return Math.max(1,Math.round(p));
+    var s=Math.pow(10,Math.floor(Math.log10(p))-2);
+    return Math.round(p/s)*s;
+  }
+  function sliderToPrice(v){return niceRound(Math.exp(v/1000*LN));}
+  function priceToSlider(p){return clamp(Math.round(pos(p)*1000),0,1000);}
+
+  function dayKey(d){d=d||new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+  function dayNo(d){d=d||new Date();var a=Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()),b=Date.UTC(2026,9,25);return Math.max(1,Math.round((a-b)/864e5)+1);}
+  function rng(seed){return function(){seed|=0;seed=seed+0x6D2B79F5|0;var t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+  function shuffle(a,r){a=a.slice();for(var i=a.length-1;i>0;i--){var j=Math.floor(r()*(i+1));var t=a[i];a[i]=a[j];a[j]=t;}return a;}
+  function pick(r){
+    var s=shuffle(ITEMS.filter(function(i){return i.p<100;}),r).slice(0,2);
+    var m=shuffle(ITEMS.filter(function(i){return i.p>=100&&i.p<=5000;}),r).slice(0,2);
+    var b=shuffle(ITEMS.filter(function(i){return i.p>5000;}),r)[0];
+    return shuffle(s.concat(m),r).concat([b]);
+  }
+
+  function score(g,p){
+    var r=Math.max(g,p)/Math.min(g,p);
+    return {r:r,pts:Math.max(0,Math.round(100*(1-Math.log10(r))))};
+  }
+  function cls(pts){return pts>=90?'g':pts>=70?'y':pts>=40?'o':'r';}
+  function sq(pts){return pts>=90?'🟩':pts>=70?'🟨':pts>=40?'🟧':'🟥';}
+  function ratioTxt(r){return '×'+(r<10?r.toFixed(1).replace('.',','):String(Math.round(r)));}
+  function react(r){
+    if(r<=1.05)return 'Přesně na korunu. Nepracuješ u pokladny?';
+    if(r<=1.25)return 'Skoro přesně.';
+    if(r<=1.6)return 'Slušný odhad.';
+    if(r<=2.5)return 'Vedle, ale ještě v rozumných mezích.';
+    if(r<=5)return 'Pěkně vedle.';
+    if(r<=10)return 'Tohle bylo daleko.';
+    return 'Jiná planeta.';
+  }
+  function verdict(t){
+    if(t>=450)return 'Víš to jako pokladní. Možná líp.';
+    if(t>=380)return 'Nakupuješ sám a bez nákupního seznamu od mámy.';
+    if(t>=300)return 'Slušný zákazník, jen tě občas oškubou.';
+    if(t>=200)return 'Na cenovky se moc nedíváš, že?';
+    if(t>=100)return 'Žiješ na jiné planetě, ale příjemné.';
+    return 'Platí za tebe babička.';
+  }
+
+  var S, cur=4500, timer=null;
+  function loadDaily(){
+    var key=dayKey(), saved=[];
+    try{var j=JSON.parse(localStorage.getItem('kts1')||'null'); if(j&&j.key===key&&Array.isArray(j.g))saved=j.g.filter(function(x){return typeof x==='number'&&x>0;}).slice(0,5);}catch(e){}
+    var seed=parseInt(key.replace(/-/g,''),10);
+    S={mode:'daily',key:key,no:dayNo(),seed:seed,items:pick(rng(seed)),g:saved,phase:saved.length>=5?'done':'guess'};
+  }
+  function loadPractice(){
+    var seed=1+Math.floor(Math.random()*2147483000);
+    S={mode:'practice',key:dayKey(),no:dayNo(),seed:seed,items:pick(rng(seed)),g:[],phase:'guess'};
+  }
+  function loadDuel(o){
+    S={mode:'duel',key:dayKey(),no:dayNo(),seed:o.seed,items:pick(rng(o.seed)),g:[],opp:{name:o.name,g:o.g},phase:'intro'};
+  }
+  function save(){
+    if(S.mode!=='daily')return;
+    try{localStorage.setItem('kts1',JSON.stringify({key:S.key,g:S.g}));}catch(e){}
+  }
+
+  function renderTop(){
+    metaEl.innerHTML=S.mode==='daily'?'Hra č. '+S.no+'<b>dnes</b>':S.mode==='duel'?'Duel<b>'+(S.opp.name?'vs '+esc(S.opp.name):'výzva')+'</b>':'Nanečisto<b>bez ukládání</b>';
+    var out='';
+    for(var i=0;i<5;i++){
+      var c='';
+      if(i<S.g.length&&!(S.phase==='guess'&&i===S.g.length)){c='s-'+cls(score(S.g[i],S.items[i].p).pts);}
+      else if(S.phase!=='done'&&S.phase!=='intro'&&i===S.g.length){c='now';}
+      out+='<i class="'+c+'"></i>';
+    }
+    progEl.innerHTML=out;
+  }
+
+  function guessView(){
+    var i=S.g.length, it=S.items[i];
+    var ticks=[[1,'1 Kč'],[10,''],[100,'100'],[1e3,''],[1e4,'10 tis.'],[1e5,''],[1e6,'1 mil.'],[1e7,'']];
+    var tk=ticks.map(function(t){return '<i style="--p:'+pos(t[0])+'"'+(t[1]?'':' class="minor"')+'>'+(t[1]?'<b>'+t[1]+'</b>':'')+'</i>';}).join('');
+    return '<section class="item"><div class="pic" aria-hidden="true">'+it.e+'</div><div>'+
+      '<p class="step">'+(i===4?'Velké finále, 5 z 5':'Zboží '+(i+1)+' z 5')+'</p>'+
+      '<h1>'+it.n+'</h1><p class="unit">'+it.u+'</p></div></section>'+
+      '<section class="tag"><span class="lab">Tvůj tip</span><div class="num"><output id="price" class="big-out" aria-live="polite" for="sl num">'+fmt(cur)+'</output><span class="kc">Kč</span></div></section>'+
+      '<div class="sl"><input type="range" id="sl" min="0" max="1000" step="1" value="'+priceToSlider(cur)+'" aria-label="Tvůj tip na cenu">'+
+      '<div class="scalebox"><div class="scale" aria-hidden="true">'+tk+'</div></div></div>'+
+      '<div class="row"><label class="exact" for="num">Nebo napiš přesně'+
+      '<span class="inwrap"><input id="num" inputmode="numeric" autocomplete="off" value="'+cur+'"><em>Kč</em></span></label>'+
+      '<button class="btn primary" id="lock" data-a="lock">Zamknout tip</button></div>';
+  }
+  function bindGuess(){
+    var sl=document.getElementById('sl'), num=document.getElementById('num'), out=document.getElementById('price'), lock=document.getElementById('lock');
+    function show(){out.textContent=fmt(cur);}
+    sl.addEventListener('input',function(){cur=sliderToPrice(+sl.value);num.value=cur;show();lock.disabled=false;});
+    num.addEventListener('input',function(){
+      var t=num.value.replace(/[\s ]/g,'').replace(',','.');
+      var v=parseFloat(t);
+      if(!isFinite(v)||v<1){lock.disabled=true;return;}
+      cur=Math.min(999999999,Math.round(v));
+      sl.value=priceToSlider(cur);show();lock.disabled=false;
+    });
+    num.addEventListener('keydown',function(e){if(e.key==='Enter'&&!lock.disabled){e.preventDefault();doLock();}});
+  }
+  function doLock(){
+    if(S.phase!=='guess')return;
+    S.g.push(cur);save();S.phase='reveal';render();
+  }
+
+  function revealView(){
+    var i=S.g.length-1, it=S.items[i], g=S.g[i], sc=score(g,it.p);
+    var pg=pos(g), pr=pos(it.p);
+    function edge(p){return p<0.15?' l':p>0.85?' r':'';}
+    var dir=sc.r<1.02?'Trefa na korunu.':(g>it.p?'Přeplatil bys to '+ratioTxt(sc.r)+'.':'Skutečná cena je '+ratioTxt(sc.r)+' vyšší, než jsi čekal.');
+    return '<section class="mini"><div class="pic" aria-hidden="true">'+it.e+'</div><div><p class="step">'+(i===4?'Velké finále, 5 z 5':'Zboží '+(i+1)+' z 5')+'</p><h1>'+it.n+'</h1></div></section>'+
+      '<div class="duo"><div class="cell"><span class="lab">Tvůj tip</span><strong>'+fmt(g)+' Kč</strong></div>'+
+      '<div class="tag"><span class="lab">Skutečná cena</span><div class="num"><span class="big">'+fmt(it.p)+'</span><span class="kc">Kč</span></div></div></div>'+
+      '<div class="track" id="track" style="--lo:'+pg+';--w:0"><div class="line"></div><div class="span" id="spn"></div>'+
+      '<div class="mk guess'+edge(pg)+'" style="--p:'+pg+'"><span>ty</span></div>'+
+      '<div class="mk real'+edge(pr)+'" id="mkr" style="--p:'+pg+'"><span>cena</span></div></div>'+
+      '<section class="verdict"><p class="pts">+'+sc.pts+'<small>ze 100 bodů</small></p>'+
+      '<p class="react">'+react(sc.r)+'</p><p class="dir">'+dir+'</p><p class="quip">'+it.q+'</p></section>'+
+      '<div class="btns"><button class="btn primary block" id="next" data-a="next">'+(i<4?'Další zboží':'Zobrazit účtenku')+'</button></div>';
+  }
+  function animateReveal(){
+    var i=S.g.length-1, g=S.g[i], p=S.items[i].p, pg=pos(g), pr=pos(p);
+    var tr=document.getElementById('track'), mk=document.getElementById('mkr');
+    requestAnimationFrame(function(){requestAnimationFrame(function(){
+      if(!tr||!mk)return;
+      tr.style.setProperty('--lo',Math.min(pg,pr));
+      tr.style.setProperty('--w',Math.abs(pg-pr));
+      mk.style.setProperty('--p',pr);
+    });});
+    var nx=document.getElementById('next'); if(nx)nx.focus({preventScroll:true});
+  }
+
+  function total(){return S.items.reduce(function(a,it,i){return a+score(S.g[i],it.p).pts;},0);}
+  function shareText(){
+    var t=total(), line=S.items.map(function(it,i){return sq(score(S.g[i],it.p).pts);}).join('');
+    var head=S.mode==='daily'?'Kolik to stojí? #'+S.no:'Kolik to stojí? (nanečisto)';
+    var url='';try{if(/^https?:/.test(location.href))url='\n'+location.href.split('#')[0];}catch(e){}
+    return head+'\n'+line+' '+t+'/500'+url;
+  }
+  function challengeText(name){
+    var t=total(), line=S.items.map(function(it,i){return sq(score(S.g[i],it.p).pts);}).join('');
+    var tok=makeToken(S.seed,S.g,name);
+    return 'Zahraješ si moje Kolik to stojí? Mám '+t+'/500 '+line+'. Porazíš mě?\n'+GAME_URL+'#'+tok+'\nKdyby odkaz nešel, vlož do hry tenhle kód: '+tok;
+  }
+  function introView(){
+    var n=esc(S.opp.name||'Kamarád');
+    return '<section class="intro"><p class="step">Výzva</p><h1>'+n+' tě vyzývá na duel</h1>'+
+      '<p class="unit">Stejná pětice, stejné ceny. Kdo se u věcí trefí blíž, bere body. Jeho tipy uvidíš až po dohrání.</p></section>'+
+      '<div class="btns"><button class="btn primary block" data-a="accept">Přijmout výzvu</button></div>';
+  }
+  function duelView(){
+    var me=0,op=0,oname=esc(S.opp.name||'Soupeř');
+    var rows=S.items.map(function(it,i){
+      var a=score(S.g[i],it.p), b=score(S.opp.g[i],it.p);
+      me+=a.pts;op+=b.pts;
+      return '<li class="crow"><span class="rn">'+it.e+' '+it.n+'<em>cena '+fmt(it.p)+' Kč</em></span>'+
+        '<span class="cc'+(a.pts>b.pts?' win':'')+'"><small>ty</small>'+fmt(S.g[i])+' Kč<b>'+a.pts+' b.</b></span>'+
+        '<span class="cc'+(b.pts>a.pts?' win':'')+'"><small>'+oname+'</small>'+fmt(S.opp.g[i])+' Kč<b>'+b.pts+' b.</b></span></li>';
+    }).join('');
+    var d=me-op, ad=Math.abs(d);
+    var head=d>0?'Vyhráváš o '+d+' '+plBody(d)+'.':d<0?'Prohráváš o '+ad+' '+plBody(ad)+'.':'Remíza. Nudná, ale spravedlivá.';
+    var sub=d===0?'Dva stejně šikovní zákazníci.':ad>=100?(d>0?'Takhle se vyhrává.':'To bolelo.'):ad<=15?(d>0?'Rozhodla jedna cenovka.':'Jen o chlup.'):(d>0?'Příště ať se víc snaží.':'Chce to odvetu.');
+    var date=new Date();
+    return '<section class="receipt" aria-label="Výsledek duelu"><p class="rh">DUEL</p>'+
+      '<p class="rd">'+date.getDate()+'. '+(date.getMonth()+1)+'. '+date.getFullYear()+'</p><hr class="rl">'+
+      '<p class="vsline">'+head+'<small>'+sub+'</small></p><hr class="rl">'+
+      '<ul class="rows">'+rows+'</ul><hr class="rl">'+
+      '<div class="rt"><span>TY</span><b>'+me+'</b></div>'+
+      '<div class="rt"><span>'+oname+'</span><b>'+op+'</b></div></section>'+
+      boardHTML(5)+
+      '<div class="btns" style="margin-top:28px"><button class="btn primary block" data-a="practice">Odveta: nové kolo</button>'+
+      '<button class="btn block" data-a="daily">Zpět na dnešní hru</button></div>';
+  }
+  function doneView(){return S.mode==='duel'?duelView():doneViewSolo();}
+  function doneViewSolo(){
+    var t=total();
+    var rows=S.items.map(function(it,i){
+      var sc=score(S.g[i],it.p);
+      return '<li class="rrow"><span class="rn">'+it.e+' '+it.n+'</span><span class="rp">'+sc.pts+' b.</span>'+
+        '<span class="rs">tip '+fmt(S.g[i])+' · cena '+fmt(it.p)+' Kč · '+ratioTxt(sc.r)+'</span></li>';
+    }).join('');
+    var d=new Date();
+    var date=d.getDate()+'. '+(d.getMonth()+1)+'. '+d.getFullYear();
+    var squares=S.items.map(function(it,i){return sq(score(S.g[i],it.p).pts);}).join('');
+    var secondary=S.mode==='daily'
+      ? '<button class="btn block" data-a="practice">Hrát nanečisto</button>'
+      : '<button class="btn block" data-a="practice">Další kolo nanečisto</button><button class="btn block" data-a="daily">Zpět na dnešní hru</button>';
+    var nm='';try{nm=localStorage.getItem('kts-name')||'';}catch(e){}
+    var first='<div class="chal"><label for="nm">Tvoje jméno pro duel</label>'+
+      '<input id="nm" maxlength="14" autocomplete="off" placeholder="třeba Kuba" value="'+esc(nm)+'">'+
+      '<button class="btn primary block" data-a="challenge">Vyzvat kamaráda</button>'+
+      '<p class="hint2">Kamarád zahraje stejnou pětici a oba uvidíte, kdo byl u každé věci blíž.</p></div>'+
+      '<button class="btn block" data-a="copy">Zkopírovat jen výsledek</button>';
+    return '<section class="receipt" aria-label="Účtenka"><p class="rh">KOLIK TO STOJÍ?</p>'+
+      '<p class="rd">'+(S.mode==='daily'?'účtenka č. '+S.no:'nanečisto')+' · '+date+'</p><hr class="rl">'+
+      '<ul class="rows">'+rows+'</ul><hr class="rl">'+
+      '<div class="rt"><span>CELKEM</span><b>'+t+' / 500</b></div>'+
+      '<p class="sq" aria-hidden="true">'+squares+'</p>'+
+      '<p class="rv">'+verdict(t)+'</p></section>'+
+      '<div class="btns" style="margin-top:28px">'+first+secondary+'</div>'+
+      '<p class="flash" id="flash" aria-live="polite"></p><div id="fallback"></div>'+
+      (S.mode==='daily'?'<p class="cd">Nová pětice za <b id="cd">--:--:--</b></p>':'');
+  }
+  function startCountdown(){
+    var el=document.getElementById('cd'); if(!el)return;
+    function tick(){
+      var n=new Date(), nx=new Date(n.getFullYear(),n.getMonth(),n.getDate()+1);
+      var s=Math.max(0,Math.floor((nx-n)/1000));
+      if(s<=0&&S.mode==='daily'&&dayKey()!==S.key){clearInterval(timer);loadDaily();render();return;}
+      var h=Math.floor(s/3600),m=Math.floor(s%3600/60),sec=s%60;
+      el.textContent=[h,m,sec].map(function(x){return String(x).padStart(2,'0');}).join(':');
+    }
+    tick();timer=setInterval(tick,1000);
+  }
+
+  function flash(msg){var f=document.getElementById('flash');if(f)f.textContent=msg;}
+  function doCopy(text,okMsg){
+    function fallback(){
+      var box=document.getElementById('fallback');
+      if(!box)return;
+      box.innerHTML='<textarea class="copybox" id="cb" rows="4" readonly aria-label="Výsledek ke zkopírování"></textarea>';
+      var ta=document.getElementById('cb');ta.value=text;ta.focus();ta.select();
+      flash('Označ text a zkopíruj ho.');
+    }
+    try{
+      if(navigator.clipboard&&navigator.clipboard.writeText){
+        navigator.clipboard.writeText(text).then(function(){flash(okMsg||'Zkopírováno.');},fallback);
+      }else fallback();
+    }catch(e){fallback();}
+  }
+
+  function render(){
+    clearInterval(timer);
+    renderTop();
+    if(S.phase==='intro'){
+      app.innerHTML=introView();
+    }else if(S.phase==='guess'){
+      cur=4500;
+      app.innerHTML=guessView();bindGuess();
+    }else if(S.phase==='reveal'){
+      app.innerHTML=revealView();animateReveal();
+    }else{
+      app.innerHTML=doneView();startCountdown();
+    }
+    if(S.phase!=='guess'){try{window.scrollTo({top:0,behavior:'instant'});}catch(e){}}
+  }
+
+  app.addEventListener('click',function(e){
+    var b=e.target.closest('[data-a]');if(!b)return;
+    var a=b.getAttribute('data-a');
+    if(a==='lock')doLock();
+    else if(a==='next'){
+      S.phase=S.g.length>=5?'done':'guess';
+      if(S.phase==='done'&&S.mode==='duel')recordDuel();
+      render();
+    }
+    else if(a==='copy')doCopy(shareText(),'Zkopírováno.');
+    else if(a==='accept'){S.phase='guess';render();}
+    else if(a==='challenge'){
+      var inp=document.getElementById('nm'), nm=inp?inp.value.trim().slice(0,14):'';
+      try{localStorage.setItem('kts-name',nm);}catch(e){}
+      doCopy(challengeText(nm),'Výzva zkopírována. Pošli ji kamarádovi.');
+    }
+    else if(a==='practice'){loadPractice();render();}
+    else if(a==='daily'){loadDaily();render();}
+  });
+
+  function startDuel(o){loadDuel(o);render();}
+  var joinBtn=document.getElementById('joinbtn'), joinIn=document.getElementById('joinin'), joinMsg=document.getElementById('joinmsg'), joinBox=document.getElementById('joinbox');
+  function tryJoin(){
+    var o=parseToken(joinIn.value);
+    if(!o){joinMsg.textContent='Tenhle kód nevypadá správně. Zkopíruj ho celý.';return;}
+    joinMsg.textContent='';joinIn.value='';joinBox.open=false;startDuel(o);
+  }
+  joinBtn.addEventListener('click',tryJoin);
+  joinIn.addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();tryJoin();}});
+  window.addEventListener('hashchange',function(){var o=null;try{o=parseToken(location.hash);}catch(e){}if(o)startDuel(o);});
+
+  refreshBoard();
+  var first=null;try{first=parseToken(location.hash);}catch(e){}
+  if(first){startDuel(first);}else{loadDaily();render();}
+})();
+</script>
+</body>
+</html>
